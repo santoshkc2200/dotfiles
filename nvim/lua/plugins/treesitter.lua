@@ -33,20 +33,6 @@ return {
         'css',
         'html',
       }
-
-      -- Enable highlighting per filetype
-      vim.api.nvim_create_autocmd('FileType', {
-        callback = function()
-          vim.treesitter.start()
-        end,
-      })
-
-      -- Enable treesitter indentation (experimental)
-      vim.api.nvim_create_autocmd('FileType', {
-        callback = function()
-          vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-        end,
-      })
     end,
   },
 }
