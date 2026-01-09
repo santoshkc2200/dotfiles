@@ -30,6 +30,7 @@ local themes = {
 -- Setup plugins
 require('lazy').setup({
   require(themes[env_var_nvim_theme]),
+  require 'plugins.confirm',
   require 'plugins.telescope',
   require 'plugins.treesitter',
   require 'plugins.lsp',
