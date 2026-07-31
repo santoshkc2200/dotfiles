@@ -8,7 +8,8 @@ local utils = require("nisi.utils")
 ---@field startup_art NisiAscii|nil The startup art to show when loading the app
 ---@field startup_color string|nil The color to use for the startup art
 ---@field zen boolean|nil Whether to show a minimal UI (hide statusline, line numbers, etc.)
----@field copilot boolean|nil Whether copilot is enabled
+-- @field copilot boolean|nil Whether copilot is enabled (disabled in favor of avante)
+---@field avante boolean|nil Whether avante (AI assistant) is enabled
 ---@field python boolean|nil Whether python is enabled
 ---@field fzf boolean|nil Whether too configure fzf for tooling like telescope
 ---@field prefer_git boolean|nil Whether to prefer using git for dependencies over other options like curl
@@ -21,7 +22,8 @@ local config = {
   startup_art = "nicknisi",
   startup_color = "#653CAD",
   zen = false,
-  copilot = true,
+  -- copilot = true, -- disabled in favor of avante
+  avante = true,
   fzf = true,
   proxy = nil,
   prefer_git = false,
@@ -89,7 +91,11 @@ local function init_plugins()
   load_lazy(lazypath)
 
   if config.copilot then
-    M.add_plugin({ import = "nisi.plugins.extras.copilot" })
+    -- M.add_plugin({ import = "nisi.plugins.extras.copilot" }) -- disabled in favor of avante
+  end
+
+  if config.avante then
+    M.add_plugin({ import = "nisi.plugins.extras.avante" })
   end
 
   if config.python then

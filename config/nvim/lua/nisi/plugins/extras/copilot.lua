@@ -1,3 +1,7 @@
+-- Disabled in favor of avante (NIMS provider). Restore this block by removing
+-- the surrounding long comment `--[[ ... ]]` and re-enabling the `copilot`
+-- field in lua/nisi/init.lua + completion.lua.
+--[[
 return {
   {
     "zbirenbaum/copilot.lua",
@@ -49,3 +53,5 @@ return {
     },
   },
 }
+--]]
+return {}

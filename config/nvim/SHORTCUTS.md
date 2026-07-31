@@ -128,6 +128,28 @@ Leader key: **`,`** (comma)
 
 ---
 
+## Avante (AI assistant)
+
+| Key | Description |
+|-----|-------------|
+| `,aa` | Ask Avante |
+| `,at` | Toggle sidebar |
+| `,ar` | Refresh sidebar |
+| `,af` | Switch sidebar focus |
+| `,an` | New ask |
+| `,ae` | Edit selected blocks |
+| `,aS` | Stop current AI request |
+| `,a?` | Select model (built-in picker) |
+| `,am` | Select provider/model (custom) |
+| `,ac` | Add current buffer to selected files |
+| `,aB` | Add all buffer files to selected files |
+| `,ah` | Select chat history |
+| `,ad` | Toggle debug mode |
+| `,as` | Toggle suggestion display |
+| `,aR` | Toggle repomap |
+
+---
+
 ## Misc
 
 | Key | Description |

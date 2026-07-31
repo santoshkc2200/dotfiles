@@ -64,9 +64,9 @@ return {
       cmdline = { enabled = false },
 
       -- Default list of enabled providers defined so that you can extend it
-      -- elsewhere in your config, without redefining it, due to `opts_extend`
+      -- elsewhere in the config, without redefining it, due to `opts_extend`
       sources = {
-        default = { "lsp", "copilot", "snippets", "path", "buffer" },
+        default = { "lsp", "snippets", "path", "buffer" }, -- "copilot" removed (disabled in favor of avante)
       },
     },
     opts_extend = { "sources.default" },
