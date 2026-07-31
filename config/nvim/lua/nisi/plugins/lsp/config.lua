@@ -19,6 +19,10 @@ local servers = {
   "ruby_lsp",
   "pylsp",
   "vimls",
+  "dockerls",
+  "yamlls",
+  "terraformls",
+  "biome",
 }
 
 local M = {}
@@ -248,11 +252,10 @@ function M.setup()
               },
               {
                 fileMatch = {
-                  ".prettierrc",
-                  ".prettierrc.json",
-                  "prettier.config.json",
+                  "biome.json",
+                  "biome.jsonc",
                 },
-                url = "https://json.schemastore.org/prettierrc.json",
+                url = "https://json.schemastore.org/biome.json",
               },
               {
                 fileMatch = { ".eslintrc", ".eslintrc.json" },
@@ -333,6 +336,24 @@ function M.setup()
     )
   end
 
+  if utils.exists_in_table(servers, "gopls") then
+    vim.lsp.config(
+      "gopls",
+      make_conf({
+        settings = {
+          gopls = {
+            analyses = {
+              unusedparams = true,
+              shadow = true,
+            },
+            staticcheck = true,
+          },
+        },
+      })
+    )
+    vim.lsp.enable("gopls")
+  end
+
   if utils.exists_in_table(servers, "intelephense") then
     vim.lsp.config(
       "intelephense",
@@ -350,6 +371,52 @@ function M.setup()
       "vimls",
       make_conf({
         init_options = { isNeovim = true },
+      })
+    )
+  end
+
+  if utils.exists_in_table(servers, "yamlls") then
+    vim.lsp.config(
+      "yamlls",
+      make_conf({
+        filetypes = { "yaml", "yaml.docker-compose" },
+        settings = {
+          yaml = {
+            schemas = {
+              ["https://json.schemastore.org/github-workflow.json"] = "/.github/workflows/*",
+              ["https://json.schemastore.org/github-action.json"] = "/action.{yml,yaml}",
+              ["https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json"] = {
+                "docker-compose.yml",
+                "docker-compose.yaml",
+                "compose.yml",
+                "compose.yaml",
+              },
+            },
+            validate = true,
+            hover = true,
+            completion = true,
+          },
+        },
+      })
+    )
+  end
+
+  if utils.exists_in_table(servers, "terraformls") then
+    vim.lsp.config(
+      "terraformls",
+      make_conf({
+        filetypes = { "terraform", "terraform-vars", "hcl" },
+        root_markers = { ".terraform", ".tfroot" },
+      })
+    )
+  end
+
+  if utils.exists_in_table(servers, "dockerls") then
+    vim.lsp.config(
+      "dockerls",
+      make_conf({
+        filetypes = { "dockerfile" },
+        root_markers = { "Dockerfile" },
       })
     )
   end

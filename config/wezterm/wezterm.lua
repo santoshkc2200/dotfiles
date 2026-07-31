@@ -84,11 +84,17 @@ else
   config.set_environment_variables = {
     THEME_FLAVOUR = "latte",
   }
-  config.background = {
-    b.get_background(),
-  }
+  local bg = b.get_background()
+  bg.width = "100%"
+  bg.height = "100%"
+  config.background = { bg }
 end
 
 wezterm.plugin.require("https://gitlab.com/xarvex/presentation.wez").apply_to_config(config)
+
+wezterm.on("gui-startup", function(cmd)
+  local _, _, window = wezterm.mux.spawn_window(cmd or {})
+  window:gui_window():maximize()
+end)
 
 return config

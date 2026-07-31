@@ -25,16 +25,16 @@ local config = {
   fzf = true,
   proxy = nil,
   prefer_git = false,
-  colorscheme = function()
-    if utils.is_dark_mode() then
-      vim.o.background = "dark"
-    else
-      vim.o.background = "light"
-    end
+    colorscheme = function()
+      if utils.is_dark_mode() then
+        vim.o.background = "dark"
+      else
+        vim.o.background = "light"
+      end
 
-    vim.cmd("colorscheme tokyonight")
-  end,
-  transparent = false,
+      vim.cmd("colorscheme gruvbox")
+    end,
+  transparent = true,
 }
 
 ---Assign a user config to the config table

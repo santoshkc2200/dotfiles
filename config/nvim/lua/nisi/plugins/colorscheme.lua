@@ -6,11 +6,17 @@ return {
   {
     "catppuccin/nvim",
     name = "catppuccin",
-    lazy = true,
+    lazy = false,
+    priority = 1000,
     opts = {
       flavour = utils.is_dark_mode() and "mocha" or "latte", -- latte, frappe, macchiato, mocha
+      -- flavour = "macchiato",
       -- dim_inactive = { enabled = config.transparent or false, shade = "dark", percentage = 0.6 },
       transparent_background = config.transparent or false, -- set to true to enable transparent background
+      float = {
+        transparent = config.transparent or false, -- enable transparent floating windows
+        solid = config.transparent or false, -- use solid styling for floating windows, see |winborder|
+      },
       term_colors = true,
       compile = { enabled = true, path = vim.fn.stdpath("cache") .. "/catppuccin", suffix = "_compiled" },
       styles = {
@@ -164,11 +170,20 @@ return {
     lazy = false,
     priority = 1000,
     opts = {
-      style = "night",
+      style = utils.is_dark_mode() and "night" or "day",
       transparent = config.transparent or false,
       styles = {
         comments = { italic = true },
       },
+    },
+  },
+  {
+    "ellisonleao/gruvbox.nvim",
+    lazy = false,
+    priority = 1000,
+    opts = {
+      contrast = utils.is_dark_mode() and "hard" or "soft",
+      transparent_mode = config.transparent or false,
     },
   },
 }
