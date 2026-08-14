@@ -10,7 +10,6 @@ return {
       "stevearc/dressing.nvim",
       "MunifTanjim/nui.nvim",
       "nvim-tree/nvim-web-devicons",
-      "zbirenbaum/copilot.lua", -- kept as a dependency for avante's copilot provider option
       {
         "HakonHarnes/img-clip.nvim",
         event = "VeryLazy",
