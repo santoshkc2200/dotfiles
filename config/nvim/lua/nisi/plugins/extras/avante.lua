@@ -61,6 +61,12 @@ return {
           endpoint = "https://integrate.api.nvidia.com/v1",
           model = "nvidia/nemotron-3-ultra-550b-a55b",
         },
+        openrouter = {
+          __inherited_from = "openai",
+          api_key_name = "OPENROUTER_API_KEY",
+          endpoint = "https://openrouter.ai/api/v1",
+          model = "deepseek/deepseek-chat",
+        },
       },
     },
     keys = {
@@ -73,6 +79,7 @@ return {
             "nvidia_deepseek_v4_pro",
             "nvidia_deepseek_v4_flash",
             "nvidia_nemotron3_ultra",
+            "openrouter",
           }
           local cur = require("avante.config").provider
           vim.ui.select(providers, { prompt = "Select Avante provider", default = cur }, function(choice)

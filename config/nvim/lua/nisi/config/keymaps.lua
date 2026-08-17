@@ -12,6 +12,7 @@ vim.keymap.set({ "n", "i", "v" }, "<D-s>", "<cmd>w<cr><esc>", { desc = "Save Fil
 
 vim.keymap.set("n", "<space>", "<cmd>silent set hlsearch! hlsearch?<cr>", { desc = "Toggle search results" })
 vim.keymap.set("n", "<leader>l", "<cmd>set list!<cr>", { desc = "Toggle invisible characters" })
+vim.keymap.set("n", "<leader>tp", "<cmd>InspectTree<cr>", { desc = "Treesitter playground" })
 vim.keymap.set("n", "<leader>.", "<c-^>", { desc = "Go to last buffer" })
 vim.keymap.set("n", "<leader>z", "<Plug>Zoom", { desc = "Toggle zoom", remap = true })
 

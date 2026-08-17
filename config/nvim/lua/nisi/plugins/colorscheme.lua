@@ -134,7 +134,7 @@ return {
         },
         treesitter_context = true,
         which_key = true,
-        ts_rainbow = true,
+        rainbow_delimiters = true,
       },
       custom_highlights = function(colors)
         return {
