@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+# Description: Sync dotfiles from the main repo (upstream) and push to your fork
+
+set -Eeuo pipefail
+
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+DOTFILES="${DOTFILES:-$(dirname "$script_dir")}"
+
+source "$DOTFILES/bin/lib/common.sh"
+
+command_name=$(basename "${BASH_SOURCE[0]}")
+
+UPSTREAM="upstream"
+UPSTREAM_URL="https://github.com/nicknisi/dotfiles.git"
+ORIGIN="origin"
+PUSH_ATTEMPTS=3
+
+dry_run=false
+auto_stash=false
+stashed=false
+stash_restored=false
+
+cleanup() {
+  if [[ "$stashed" == true && "$stash_restored" != true ]]; then
+    log_warning "Your changes are still stashed. Restore with: git -C '$DOTFILES' stash pop"
+  fi
+}
+trap cleanup EXIT
+
+usage() {
+  cat <<EOF
+  $(fmt_key "Usage:") $(fmt_cmd "$command_name") $(fmt_value "[options]")
+
+  Sync this dotfiles checkout from the main repository ($(fmt_value "$UPSTREAM_URL"))
+  and push local changes to your fork. Safe for shared forks: if another user
+  pushed first, their commits are integrated before pushing.
+
+Options:
+    -h, --help    Show this help message
+    -n, --dry-run Show what would happen without changing anything
+    -s, --stash   Auto-stash uncommitted changes before syncing
+EOF
+}
+
+ensure_remotes() {
+  if ! git -C "$DOTFILES" remote get-url "$ORIGIN" >/dev/null 2>&1; then
+    log_error "No '$ORIGIN' remote. Point it at your fork, e.g.:"
+    printf "  git -C %s remote add %s <your-fork-url>\n" "$DOTFILES" "$ORIGIN"
+    exit 1
+  fi
+  if ! git -C "$DOTFILES" remote get-url "$UPSTREAM" >/dev/null 2>&1; then
+    log_info "Adding '$UPSTREAM' remote → $UPSTREAM_URL"
+    if [[ "$dry_run" != true ]]; then
+      git -C "$DOTFILES" remote add "$UPSTREAM" "$UPSTREAM_URL"
+    fi
+  fi
+}
+
+current_branch() {
+  git -C "$DOTFILES" symbolic-ref --short HEAD 2>/dev/null || true
+}
+
+check_branch() {
+  local branch
+  branch=$(current_branch)
+  if [[ -z "$branch" ]]; then
+    log_error "Detached HEAD — check out a branch first"
+    exit 1
+  fi
+  if [[ "$branch" != "main" ]]; then
+    log_warning "On branch '$branch' instead of 'main' — syncing anyway"
+  fi
+}
+
+fetch_remotes() {
+  local branch
+  branch=$(current_branch)
+  log_info "Fetching $UPSTREAM and $ORIGIN..."
+  [[ "$dry_run" == true ]] && return 0
+  run_with_spinner "git -C '$DOTFILES' fetch --prune '$UPSTREAM' '$branch' && git -C '$DOTFILES' fetch --prune '$ORIGIN' '$branch'" 11 "Fetching remotes"
+}
+
+check_clean() {
+  if ! git -C "$DOTFILES" diff --quiet || ! git -C "$DOTFILES" diff --cached --quiet; then
+    if [[ "$auto_stash" == true ]]; then
+      log_warning "Uncommitted changes found — stashing them"
+      if [[ "$dry_run" != true ]]; then
+        git -C "$DOTFILES" stash push -m "$command_name $(date '+%F %T')"
+        stashed=true
+      fi
+    else
+      log_error "Working tree is not clean. Commit or stash first, or rerun with --stash"
+      exit 1
+    fi
+  fi
+}
+
+rebase_upstream() {
+  local branch
+  branch=$(current_branch)
+
+  if ! git -C "$DOTFILES" rev-parse --verify "$UPSTREAM/$branch" >/dev/null 2>&1; then
+    log_info "No $UPSTREAM/$branch ref yet — nothing to rebase onto"
+    return 0
+  fi
+
+  if git -C "$DOTFILES" merge-base --is-ancestor "$UPSTREAM/$branch" HEAD 2>/dev/null; then
+    log_info "Already up to date with $UPSTREAM/$branch"
+    return 0
+  fi
+
+  local count
+  count=$(git -C "$DOTFILES" --no-pager log --oneline "$UPSTREAM/$branch"..HEAD | wc -l | tr -d ' ')
+  log_info "Rebasing $count local commit(s) onto $UPSTREAM/$branch..."
+
+  [[ "$dry_run" == true ]] && { log_info "dry-run: would rebase onto $UPSTREAM/$branch"; return 0; }
+
+  if ! git -C "$DOTFILES" rebase "$UPSTREAM/$branch"; then
+    git -C "$DOTFILES" rebase --abort
+    log_error "Rebase conflicts — resolve manually and retry:"
+    printf "  git -C %s fetch %s\n" "$DOTFILES" "$UPSTREAM"
+    printf "  git -C %s rebase %s/%s\n" "$DOTFILES" "$UPSTREAM" "$branch"
+    exit 1
+  fi
+}
+
+push_origin() {
+  local branch attempt=0
+  branch=$(current_branch)
+
+  while :; do
+    if [[ "$dry_run" == true ]]; then
+      log_info "dry-run: would push to $ORIGIN/$branch"
+      return 0
+    fi
+
+    if git -C "$DOTFILES" push "$ORIGIN" "$branch"; then
+      return 0
+    fi
+
+    attempt=$((attempt + 1))
+    if ((attempt >= PUSH_ATTEMPTS)); then
+      log_error "Push still rejected after $PUSH_ATTEMPTS attempt(s)"
+      exit 1
+    fi
+
+    log_warning "Push rejected — another user pushed to the fork first. Integrating their commits (attempt $attempt)..."
+    git -C "$DOTFILES" fetch --prune "$ORIGIN" "$branch"
+
+    if ! git -C "$DOTFILES" merge --no-edit "$ORIGIN/$branch"; then
+      git -C "$DOTFILES" merge --abort
+      log_error "Conflict integrating $ORIGIN/$branch — resolve manually, then push:"
+      printf "  git -C %s push %s %s\n" "$DOTFILES" "$ORIGIN" "$branch"
+      exit 1
+    fi
+    log_success "Integrated $ORIGIN/$branch, retrying push..."
+  done
+}
+
+restore_stash() {
+  if [[ "$stashed" == true && "$dry_run" != true ]]; then
+    log_info "Restoring stashed changes"
+    if ! git -C "$DOTFILES" stash pop; then
+      log_warning "Could not restore stashed changes automatically — run 'git -C $DOTFILES stash pop' manually"
+      exit 1
+    fi
+    stash_restored=true
+  fi
+}
+
+main() {
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -n | --dry-run)
+      dry_run=true
+      shift
+      ;;
+    -s | --stash)
+      auto_stash=true
+      shift
+      ;;
+    *)
+      log_error "Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+    esac
+  done
+
+  check_branch
+  ensure_remotes
+  fetch_remotes
+  check_clean
+
+  local branch
+  branch=$(current_branch)
+  fmt_title_border "Syncing dotfiles → fork"
+  log_info "Local:          $(git -C "$DOTFILES" rev-parse --short HEAD)"
+  log_info "$UPSTREAM/$branch: $(git -C "$DOTFILES" rev-parse --short "$UPSTREAM/$branch" 2>/dev/null || echo unknown)"
+  log_info "$ORIGIN/$branch: $(git -C "$DOTFILES" rev-parse --short "$ORIGIN/$branch" 2>/dev/null || echo unknown)"
+
+  rebase_upstream
+  push_origin
+  restore_stash
+
+  echo
+  log_success "Sync complete. HEAD is now $(git -C "$DOTFILES" rev-parse --short HEAD)"
+}
+
+main "$@"
